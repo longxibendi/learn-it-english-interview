@@ -12,7 +12,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/eiannone/keyboard"
+	"github.com/fatih/color"
 	"github.com/kljensen/snowball"
+)
+
+var (
+	keyboardControlChan = make(chan int, 100)
 )
 
 func main() {
@@ -27,13 +33,18 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	//color print
+	colorPrint := color.New(color.FgCyan).Add(color.Bold)
+	// control back 、go on 、pause
+	// 'j' is back ,'k' is pause, 'l' is go on
+	//keyboardControlChan := make(chan int ,100)
+
+	go controlKeyboard(keyboardControlChan)
 	//var lines []string
+	sentenceSlice := make([]string, 0)
 	r := bufio.NewReader(f)
 	for {
-		// ReadLine is a low-level line-reading primitive.
-		// Most callers should use ReadBytes('\n') or ReadString('\n') instead or use a Scanner.
 		bytes, err := r.ReadBytes(byte('.'))
-		//bytes, _, err := r.ReadLine()
 		if err == io.EOF {
 			break
 		}
@@ -41,9 +52,46 @@ func main() {
 			panic(err)
 			//return lines, err
 		}
+		sentenceSlice = append(sentenceSlice, string(bytes))
+	}
 
-		fmt.Printf("\n--------------------------------------------------\n")
-		fmt.Printf("%s\n", string(bytes))
+	for i := 0; i < len(sentenceSlice); i++ {
+		// ReadLine is a low-level line-reading primitive.
+		// Most callers should use ReadBytes('\n') or ReadString('\n') instead or use a Scanner.
+
+		if len(keyboardControlChan) > 0 {
+			flowTag := <-keyboardControlChan
+			if flowTag == 1 {
+				//back to 3 sentences
+				if i > 3 {
+					i = i - 3
+					continue
+				}
+			}
+			if flowTag == 3 {
+				// skip over 3 sentences
+				if i < 1000000-3 {
+					i = i + 3
+					continue
+				}
+			}
+			//if
+		}
+		////r.ReadLine()
+		//bytes, err := r.ReadBytes(byte('.'))
+		////bytes, _, err := r.ReadLine()
+		//if err == io.EOF {
+		//	break
+		//}
+		//if err != nil {
+		//	panic(err)
+		//	//return lines, err
+		//}
+
+		fmt.Printf("\n--------------------%d------------------------------\n", i)
+		bytes := sentenceSlice[i]
+		//fmt.Printf("%s\n", string(bytes))
+		colorPrint.Printf("%s\n", string(bytes))
 		phonetic2(string(bytes), dictWord)
 
 		speech.Speak(string(bytes))
@@ -163,3 +211,43 @@ func phonetic(englishSentence string) {
 //		}
 //	}
 //}
+
+func controlKeyboard(keyboardControlChan chan int) {
+	// 打开键盘监听
+	err := keyboard.Open()
+	if err != nil {
+		panic(err)
+	}
+	defer keyboard.Close()
+
+	// 捕获连续按下的"j"字符
+	count := 0
+	for {
+		char, key, err := keyboard.GetKey()
+		if err != nil {
+			panic(err)
+		}
+
+		if key == keyboard.KeyEsc {
+			break
+		}
+
+		if char == 'j' {
+			count++
+			if count >= 10 {
+				keyboardControlChan <- 1
+				fmt.Println("连续按下了'j'字符")
+				count = 0
+			}
+		} else if char == 'l' {
+			count++
+			if count >= 10 {
+				keyboardControlChan <- 3
+				fmt.Println("连续按下了'l'字符")
+				count = 0
+			}
+		} else {
+			count = 0
+		}
+	}
+}
