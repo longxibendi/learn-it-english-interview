@@ -24,14 +24,16 @@ var (
 func main() {
 	//speech := htgotts.Speech{Folder: "audio", Language: voices.English, Handler: &handlers.MPlayer{}}
 	//speech := htgotts.Speech{Folder: "audio\\system_design", Language: voices.English, Handler: &handlers.Native{}}
-	speech := htgotts.Speech{Folder: "audio\\sample_interview_questions", Language: voices.English, Handler: &handlers.Native{}}
+	//speech := htgotts.Speech{Folder: "audio\\sample_interview_questions", Language: voices.English, Handler: &handlers.Native{}}
+	speech := htgotts.Speech{Folder: "audio\\frequently_sentence", Language: voices.English, Handler: &handlers.Native{}}
 	speech.Speak("To be a better guy,nice to meet you .")
 
 	// get the dictionary
 	dictWord := getDict("dict\\cmudict-0.7b-ipa.txt")
 	// open the read book
 	//f, err := os.Open("system_design_interview\\system-design.txt")
-	f, err := os.Open("sample_interview_questions\\sample-interview-questions.txt")
+	//f, err := os.Open("sample_interview_questions\\sample-interview-questions.txt")
+	f, err := os.Open("frequently_sentence\\frequently_sentence_chatgbt.txt")
 	if err != nil {
 		panic(err)
 	}
